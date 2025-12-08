@@ -1,6 +1,7 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth.route.js');
 const jobsRouter = require('./routes/jobs.route.js');
 const { sequelize } = require('./models');
@@ -26,6 +27,7 @@ app.use(
 );
 
 // 미들웨어
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

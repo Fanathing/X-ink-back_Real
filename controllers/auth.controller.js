@@ -130,7 +130,85 @@ const companiesLogin = async (req, res) => {
   }
 };
 
+// 로그인한 사용자정보
+const authMe = async (req, res) => {
+  try {
+    // 쿠키에서 accessToken 가져오기
+    const token = req.cookies.accessToken;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: '인증 토큰이 없습니다.',
+      });
+    }
+
+    // JWT 검증부터 들어감 만료됐거나 이상하면 바로 catch로
+    let payload;
+    try {
+      payload = jwt.verify(token, JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: '유효하지 않은 토큰입니다.',
+      });
+    }
+
+    // role이 무엇인지에 따라 회사테이블에서 가져올건지 아님 user에서 가져올건지 정함
+    if (payload.role === 'companies') {
+      // Companies 테이블에서 조회
+      const company = await Companies.findOne({
+        where: { ID: payload.id },
+        attributes: { exclude: ['PASSWORD', 'CREATED_AT'] },
+      });
+
+      if (!company) {
+        return res.status(404).json({
+          success: false,
+          message: '기업 정보를 찾을 수 없습니다.',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: company,
+      });
+    } else if (payload.role === 'user') {
+      // User 테이블에서 조회
+      const user = await User.findOne({
+        where: { ID: payload.id },
+        attributes: { exclude: ['PASSWORD', 'CREATED_AT'] },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자 정보를 찾을 수 없습니다.',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: user,
+      });
+    } else {
+      // role이 없으면 여기로 근데 없을 일이 있나
+      return res.status(403).json({
+        success: false,
+        message: '유효하지 않은 권한입니다.',
+      });
+    }
+  } catch (error) {
+    console.error('사용자 정보 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   login,
   companiesLogin,
+  authMe,
 };
