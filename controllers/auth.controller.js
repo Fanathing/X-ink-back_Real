@@ -170,7 +170,7 @@ const authMe = async (req, res) => {
       }
 
       return res.status(200).json({
-        success: true,
+        type: 'companies',
         data: company,
       });
     } else if (payload.role === 'user') {
@@ -188,7 +188,7 @@ const authMe = async (req, res) => {
       }
 
       return res.status(200).json({
-        success: true,
+        type: 'volunteer',
         data: user,
       });
     } else {
