@@ -131,7 +131,194 @@ const getJobDetail = async (req, res) => {
   }
 };
 
+/**
+ * POST /jobs
+ * 공고 생성
+ */
+const createJob = async (req, res) => {
+  try {
+    // req.user는 authMiddleware에서 설정됨
+    const payload = req.user;
+
+    // role이 "companies"가 아닌 경우
+    if (payload.role !== 'companies') {
+      return res.status(403).json({
+        success: false,
+        message: '권한이 없습니다.',
+      });
+    }
+
+    // 필수값 검증
+    const { TITLE, POSITION, START_LINE, DEAD_LINE, JOB_DESCRIPTION } =
+      req.body;
+
+    if (!TITLE || !POSITION || !START_LINE || !DEAD_LINE || !JOB_DESCRIPTION) {
+      return res.status(400).json({
+        success: false,
+        message: '모든 필수 항목을 입력해주세요.',
+      });
+    }
+
+    // 공고 생성
+    const newJob = await Jobs.create({
+      COMPANIES_ID: payload.id,
+      TITLE,
+      POSITION,
+      START_LINE,
+      DEAD_LINE,
+      JOB_DESCRIPTION,
+    });
+
+    return res.status(201).json({
+      success: true,
+      id: newJob.ID,
+      message: '공고가 성공적으로 생성되었습니다.',
+    });
+  } catch (error) {
+    console.error('공고 생성 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '공고 생성 중 오류가 발생했습니다.',
+    });
+  }
+};
+
+/**
+ * PATCH /jobs/:id
+ * 공고 수정
+ */
+const updateJob = async (req, res) => {
+  try {
+    // req.user는 authMiddleware에서 설정됨
+    const payload = req.user;
+
+    // role이 "companies"가 아닌 경우
+    if (payload.role !== 'companies') {
+      return res.status(403).json({
+        success: false,
+        message: '권한이 없습니다.',
+      });
+    }
+
+    const { id } = req.params;
+
+    // 공고 존재 확인
+    const job = await Jobs.findOne({
+      where: { ID: id },
+    });
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: '공고를 찾을 수 없습니다.',
+      });
+    }
+
+    // 권한 확인: 공고의 COMPANIES_ID와 JWT payload.id 일치 확인
+    if (job.COMPANIES_ID !== payload.id) {
+      return res.status(403).json({
+        success: false,
+        message: '이 공고를 수정할 권한이 없습니다.',
+      });
+    }
+
+    // 수정 가능한 필드
+    const { TITLE, POSITION, START_LINE, DEAD_LINE, JOB_DESCRIPTION } =
+      req.body;
+
+    // 업데이트할 데이터 객체 생성
+    const updateData = {};
+
+    if (TITLE !== undefined) updateData.TITLE = TITLE;
+    if (POSITION !== undefined) updateData.POSITION = POSITION;
+    if (START_LINE !== undefined) {
+      updateData.START_LINE = START_LINE;
+    }
+    if (DEAD_LINE !== undefined) {
+      updateData.DEAD_LINE = DEAD_LINE;
+    }
+    if (JOB_DESCRIPTION !== undefined)
+      updateData.JOB_DESCRIPTION = JOB_DESCRIPTION;
+
+    // 업데이트 실행
+    await Jobs.update(updateData, {
+      where: { ID: id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '공고가 성공적으로 수정되었습니다.',
+    });
+  } catch (error) {
+    console.error('공고 수정 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '공고 수정 중 오류가 발생했습니다.',
+    });
+  }
+};
+
+/**
+ * DELETE /jobs/:id
+ * 공고 삭제
+ */
+const deleteJob = async (req, res) => {
+  try {
+    // req.user는 authMiddleware에서 설정됨
+    const payload = req.user;
+
+    // role이 "companies"가 아닌 경우
+    if (payload.role !== 'companies') {
+      return res.status(403).json({
+        success: false,
+        message: '권한이 없습니다.',
+      });
+    }
+
+    const { id } = req.params;
+
+    // 공고 존재 확인
+    const job = await Jobs.findOne({
+      where: { ID: id },
+    });
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: '공고를 찾을 수 없습니다.',
+      });
+    }
+
+    // 권한 확인: 공고의 COMPANIES_ID와 JWT payload.id 일치 확인
+    if (job.COMPANIES_ID !== payload.id) {
+      return res.status(403).json({
+        success: false,
+        message: '이 공고를 삭제할 권한이 없습니다.',
+      });
+    }
+
+    // 공고 삭제
+    await Jobs.destroy({
+      where: { ID: id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: '공고가 성공적으로 삭제되었습니다.',
+    });
+  } catch (error) {
+    console.error('공고 삭제 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '공고 삭제 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   getJobs,
   getJobDetail,
+  createJob,
+  updateJob,
+  deleteJob,
 };
