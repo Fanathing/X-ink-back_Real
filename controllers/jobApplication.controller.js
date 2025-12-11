@@ -8,6 +8,14 @@ const createApplication = async (req, res) => {
   try {
     const { id } = req.params; // Jobs 테이블의 ID
     const userId = req.user.id; // authMiddleware에서 설정된 USER_ID
+    const role = req.user.role;
+
+    if (role !== 'user') {
+      return res.status(403).json({
+        success: false,
+        message: '개인 회원만 지원하실 수 있습니다.',
+      });
+    }
 
     // 요청 바디 필수값 검증
     const { email, name, phone_number, position, intro } = req.body;
