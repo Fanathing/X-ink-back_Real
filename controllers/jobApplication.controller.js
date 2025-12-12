@@ -269,8 +269,50 @@ const getApplications = async (req, res) => {
   }
 };
 
+const getVolunteers = async (req, res) => {
+  try {
+    const { role } = req.user;
+
+    if (role !== 'companies') {
+      return res.status(403).json({
+        success: false,
+        message: '기업 회원만 접근 가능합니다.',
+      });
+    }
+    const volunteers = await User.findAll({
+      attributes: {
+        exclude: ['PASSWORD', 'CREATED_AT', 'INTRO'],
+      },
+    });
+
+    const result = volunteers.map((volunteer) => {
+      return {
+        id: volunteer.ID,
+        email: volunteer.EMAIL,
+        name: volunteer.NAME,
+        phoneNumber: volunteer.PHONE_NUMBER,
+        birthDate: volunteer.BIRTH_DATE,
+        position: volunteer.POSITION,
+        thumbnailUrl: volunteer.THUMBNAIL_URL,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error('구직자 목록 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '구직자 목록 조회 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   getApplications,
   createApplication,
   getCheck,
+  getVolunteers,
 };
