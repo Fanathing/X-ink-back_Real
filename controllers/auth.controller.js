@@ -207,8 +207,31 @@ const authMe = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    res.cookie('accessToken', '', {
+      httpOnly: config.httpOnly,
+      secure: config.secure,
+      sameSite: config.sameSite,
+      domain: config.domain,
+      maxAge: 0,
+    });
+
+    return res.status(200).json({
+      message: '로그아웃 되었습니다!',
+    });
+  } catch (error) {
+    console.error('로그아웃 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '로그아웃 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 module.exports = {
   login,
   companiesLogin,
   authMe,
+  logout,
 };

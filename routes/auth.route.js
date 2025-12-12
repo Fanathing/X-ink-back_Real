@@ -9,4 +9,7 @@ router.post('/companies-login', authController.companiesLogin); // 기업 로그
 // GET /auth/me
 router.get('/me', authController.authMe);
 
+// 로그아웃
+router.post('/logout', authController.logout);
+
 module.exports = router;
