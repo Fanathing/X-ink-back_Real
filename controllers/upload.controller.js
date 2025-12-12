@@ -1,6 +1,6 @@
 const s3 = require('../config/aws');
 const { v4: uuidv4 } = require('uuid');
-const { User } = require('../models');
+const { User, Companies } = require('../models');
 
 /**
  * POST /api/upload
@@ -32,19 +32,35 @@ const uploadFile = async (req, res) => {
     console.log(uploadResult.Location);
 
     const id = req.user.id;
+    const role = req.user.role;
 
-    const updateUrl = {};
+    if (role === 'user') {
+      const updateUrl = {};
 
-    updateUrl.THUMBNAIL_URL = uploadResult.Location;
+      updateUrl.THUMBNAIL_URL = uploadResult.Location;
 
-    await User.update(updateUrl, {
-      where: { ID: id },
-    });
+      await User.update(updateUrl, {
+        where: { ID: id },
+      });
 
-    return res.status(200).json({
-      success: true,
-      message: '썸네일이 성공적으로 업로드되었습니다.',
-    });
+      return res.status(200).json({
+        success: true,
+        message: '썸네일이 성공적으로 업로드되었습니다.',
+      });
+    } else {
+      const updateUrl = {};
+
+      updateUrl.LOGO_URL = uploadResult.Location;
+
+      await Companies.update(updateUrl, {
+        where: { ID: id },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: '기업 로고가 성공적으로 업로드되었습니다.',
+      });
+    }
   } catch (error) {
     console.error('썸네일 업로드 오류:', error);
     return res.status(500).json({
