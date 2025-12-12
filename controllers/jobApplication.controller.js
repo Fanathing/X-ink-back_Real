@@ -96,6 +96,83 @@ const createApplication = async (req, res) => {
   }
 };
 
+// 회사가 받은 지원 내역 조회
+const getCheck = async (req, res) => {
+  try {
+    const { id: companyId, role } = req.user;
+
+    // role이 "user"인 경우 접근 차단
+    if (role === 'user') {
+      return res.status(403).json({
+        success: false,
+        message: '기업 회원만 접근 가능합니다.',
+      });
+    }
+
+    // COMPANIES → JOBS → JOB_APPLICATIONS 구조로 조회
+    // 해당 회사의 공고에 지원한 모든 지원 정보 조회
+    const applications = await JobApplications.findAll({
+      include: [
+        {
+          model: Jobs,
+          as: 'job',
+          where: { COMPANIES_ID: companyId },
+          attributes: ['ID', 'COMPANIES_ID'],
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['THUMBNAIL_URL'],
+        },
+      ],
+      attributes: [
+        'ID',
+        'JOBS_ID',
+        'USER_ID',
+        'USER_EMAIL',
+        'USER_NAME',
+        'USER_PHONE_NUMBER',
+        'USER_BIRTH_DATE',
+        'USER_POSITION',
+        'USER_INTRO',
+        'STATUS',
+        'CREATED_AT',
+      ],
+    });
+
+    // 응답 데이터 구성
+    const result = applications.map((application) => {
+      const user = application.user;
+
+      return {
+        id: application.ID,
+        jobsId: application.JOBS_ID,
+        userId: application.USER_ID,
+        userEmail: application.USER_EMAIL,
+        userName: application.USER_NAME,
+        userPhoneNumber: application.USER_PHONE_NUMBER,
+        userBirthDate: application.USER_BIRTH_DATE,
+        userPosition: application.USER_POSITION,
+        userIntro: application.USER_INTRO,
+        status: application.STATUS,
+        createdAt: application.CREATED_AT,
+        thumbnailUrl: user ? user.THUMBNAIL_URL : null,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error('지원 내역 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '지원 내역 조회 중 오류가 발생했습니다.',
+    });
+  }
+};
+
 // 내가 지원한 공고들
 const getApplications = async (req, res) => {
   try {
@@ -189,4 +266,5 @@ const getApplications = async (req, res) => {
 module.exports = {
   getApplications,
   createApplication,
+  getCheck,
 };
